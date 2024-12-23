@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { listBuckets } from "./actions";
 import { CreateBucketDialog } from "./components/create-bucket-dialog";
-import { DeleteBucketDialog } from "./components/delete-bucket-dialog";
+import { ObjectActions } from "./components/object-actions";
 
 export default async function Home() {
   const { buckets, error } = await listBuckets();
@@ -27,21 +27,19 @@ export default async function Home() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {buckets?.map((bucket) => (
             <Card key={bucket.Name}>
-              <CardHeader>
+              <CardHeader className="flex items-center flex-row justify-between">
                 <CardTitle>
                   <Link href={`/buckets/${bucket.Name}`} className="hover:underline">
                     {bucket.Name}
                   </Link>
                 </CardTitle>
+                <ObjectActions bucket={bucket}  />
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                   Created: {bucket.CreationDate?.toLocaleDateString()}
                 </p>
               </CardContent>
-              <CardFooter className="flex justify-end">
-                <DeleteBucketDialog bucket={bucket.Name!} />
-              </CardFooter>
             </Card>
           ))}
         </div>
