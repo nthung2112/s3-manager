@@ -9,6 +9,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteBucketCommand,
+  CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrlS3 } from "@aws-sdk/s3-request-presigner";
 
@@ -89,7 +90,7 @@ export async function getSignedUrl(bucket: string, key: string) {
       Bucket: bucket,
       Key: key,
     });
-    const url = await getSignedUrlS3(s3, command, { expiresIn: 3600 })
+    const url = await getSignedUrlS3(s3, command, { expiresIn: 3600 });
     return { success: true, url };
   } catch (error) {
     return { success: false, error: (error as Error).message };
@@ -100,10 +101,55 @@ export async function deleteBucket(bucket: string) {
   try {
     const command = new DeleteBucketCommand({
       Bucket: bucket,
-    })
-    await s3.send(command)
-    return { success: true }
+    });
+    await s3.send(command);
+    return { success: true };
   } catch (error) {
-    return { success: false, error: (error as Error).message }
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function updateBucket(oldName: string, newName: string) {
+  try {
+
+    // Create new bucket with new name
+    const createCommand = new CreateBucketCommand({
+      Bucket: newName,
+    });
+    await s3.send(createCommand);
+
+    // Copy all objects from old bucket to new bucket
+    const listCommand = new ListObjectsV2Command({
+      Bucket: oldName,
+    });
+    const objects = await s3.send(listCommand);
+
+    if (objects.Contents) {
+      for (const object of objects.Contents) {
+        const copyCommand = new CopyObjectCommand({
+          Bucket: newName,
+          CopySource: `${oldName}/${object.Key}`,
+          Key: object.Key,
+        });
+        await s3.send(copyCommand);
+
+        // Delete object from old bucket
+        const deleteObjCommand = new DeleteObjectCommand({
+          Bucket: oldName,
+          Key: object.Key!,
+        });
+        await s3.send(deleteObjCommand);
+      }
+    }
+
+    // Delete old bucket
+    const deleteBucketCommand = new DeleteBucketCommand({
+      Bucket: oldName,
+    });
+    await s3.send(deleteBucketCommand);
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
   }
 }

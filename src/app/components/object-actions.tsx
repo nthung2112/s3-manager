@@ -12,6 +12,7 @@ import { DeleteBucketDialog } from "./delete-bucket-dialog";
 import { Bucket } from "@aws-sdk/client-s3";
 import { useState } from "react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { EditBucketDialog } from "./edit-bucket-dialog";
 
 export function ObjectActions({ bucket }: { bucket: Bucket }) {
   const [dialogMenu, setDialogMenu] = useState<string>("none");
@@ -19,7 +20,7 @@ export function ObjectActions({ bucket }: { bucket: Bucket }) {
   const handleDialogMenu = () => {
     switch (dialogMenu) {
       case "create":
-        return null;
+        return <EditBucketDialog bucket={bucket.Name!} onClose={() => setDialogMenu("none")} mode="edit" />;
       case "delete":
         return <DeleteBucketDialog bucket={bucket.Name!} onClose={() => setDialogMenu("none")} />;
       default:
